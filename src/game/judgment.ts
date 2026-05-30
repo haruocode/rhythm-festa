@@ -1,9 +1,8 @@
 import type { Note, Team } from "./chart";
 
-export type Judgment = "perfect" | "good" | "miss";
+export type Judgment = "good" | "miss";
 
 export const JUDGMENT_WINDOWS = {
-  perfect: 120,
   good: 220,
 } as const;
 
@@ -46,7 +45,7 @@ export function judgeTeamInput(
   return {
     noteId: bestNote.id,
     team,
-    judgment: bestAbsDeltaMs <= JUDGMENT_WINDOWS.perfect ? "perfect" : "good",
+    judgment: "good",
     timingDeltaMs: bestDeltaMs,
   };
 }

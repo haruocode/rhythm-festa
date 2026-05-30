@@ -5,7 +5,7 @@ const LOOK_AHEAD_MS = 2400;
 const LOOK_BEHIND_MS = 360;
 const JUDGMENT_LINE_RATIO = 0.78;
 const NOTE_WIDTH_RATIO = 0.78;
-const NOTE_HEIGHT_RATIO = 0.14;
+const NOTE_HEIGHT_RATIO = 0.09;
 
 type NoteCanvasProps = {
   chart: Chart;
@@ -88,7 +88,7 @@ function drawChart(
   const judgmentY = height * JUDGMENT_LINE_RATIO;
   const travelDistance = judgmentY - topPadding;
   const noteWidth = Math.max(160, laneWidth * NOTE_WIDTH_RATIO);
-  const noteHeight = Math.max(34, Math.min(58, laneWidth * NOTE_HEIGHT_RATIO));
+  const noteHeight = Math.max(24, Math.min(38, laneWidth * NOTE_HEIGHT_RATIO));
 
   drawBackground(context, width, height);
   drawLane(context, "red", 0, topPadding, laneWidth, height - bottomPadding);
@@ -191,20 +191,13 @@ function drawNote(
   context.shadowBlur = 22;
   context.shadowColor = style.fill;
   context.fillStyle = style.fill;
-  roundRect(context, x, y, width, height, 8);
+  roundRect(context, x, y, width, height, height / 2);
   context.fill();
   context.restore();
 
   context.strokeStyle = "#fff7ed";
   context.lineWidth = 4;
-  roundRect(context, x + 2, y + 2, width - 4, height - 4, 6);
-  context.stroke();
-
-  context.strokeStyle = "rgb(255 247 237 / 0.82)";
-  context.lineWidth = 3;
-  context.beginPath();
-  context.moveTo(x + 14, centerY);
-  context.lineTo(x + width - 14, centerY);
+  roundRect(context, x + 2, y + 2, width - 4, height - 4, (height - 4) / 2);
   context.stroke();
 }
 

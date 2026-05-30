@@ -140,14 +140,9 @@ h1 {
   left: 75%;
 }
 
-.judgmentFlash.perfect {
+.judgmentFlash.good {
   background: #fbbf24;
   box-shadow: 0 0 48px rgb(251 191 36 / 0.72);
-}
-
-.judgmentFlash.good {
-  background: #34d399;
-  box-shadow: 0 0 44px rgb(52 211 153 / 0.68);
 }
 
 .judgmentFlash.miss {

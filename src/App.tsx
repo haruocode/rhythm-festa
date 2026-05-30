@@ -293,7 +293,7 @@ function App() {
         <p className="statusText">
           {chartLoadError && `チャート読み込みエラー: ${chartLoadError}`}
           {!chartLoadError && playState === "idle" && `${chart.title} を読み込みました。スタートできます。`}
-          {playState === "playing" && "タイミングよく押すと PERFECT / GOOD、通り過ぎると MISS。"}
+          {playState === "playing" && "タイミングよく押すと GOOD、通り過ぎると MISS。"}
           {playState === "finished" && "デモ曲が終わりました。もう一度スタートできます。"}
         </p>
       </section>
