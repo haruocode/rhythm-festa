@@ -36,7 +36,7 @@ const notePattern: Team[] = [
 export const demoChart: Chart = {
   title: "Festival Demo",
   artist: "Rhythm Festa",
-  audioUrl: "generated-demo-song",
+  audioUrl: "/music/demo.mp3",
   notes: notePattern.map((team, index) => ({
     id: `demo-note-${index + 1}`,
     timeMs: 1000 + index * 520,

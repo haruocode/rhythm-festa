@@ -6,14 +6,75 @@ const DEMO_DURATION_SECONDS = BAR_SECONDS * LOOP_BARS;
 
 type ScheduledNode = OscillatorNode | AudioBufferSourceNode;
 
-export type DemoSongController = {
+export type SongController = {
   durationMs: number;
   start: () => void;
   getSongTimeMs: () => number;
   dispose: () => Promise<void>;
 };
 
-export async function createDemoSong(): Promise<DemoSongController> {
+export async function createSongFromAudioUrl(audioUrl: string): Promise<SongController> {
+  if (audioUrl === "generated-demo-song") {
+    return createDemoSong();
+  }
+
+  return createAudioFileSong(audioUrl);
+}
+
+async function createAudioFileSong(audioUrl: string): Promise<SongController> {
+  const audioContext = new AudioContext();
+  const response = await fetch(audioUrl);
+
+  if (!response.ok) {
+    await audioContext.close();
+    throw new Error(`Failed to load audio file: ${audioUrl}`);
+  }
+
+  const arrayBuffer = await response.arrayBuffer();
+  const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+  const masterGain = audioContext.createGain();
+  let source: AudioBufferSourceNode | null = null;
+  let songStartAudioTime: number | null = null;
+
+  masterGain.gain.value = 0.85;
+  masterGain.connect(audioContext.destination);
+
+  return {
+    durationMs: audioBuffer.duration * 1000,
+    start: () => {
+      const nextSource = audioContext.createBufferSource();
+      const startTime = audioContext.currentTime + 0.08;
+
+      nextSource.buffer = audioBuffer;
+      nextSource.connect(masterGain);
+      nextSource.start(startTime);
+
+      source = nextSource;
+      songStartAudioTime = startTime;
+    },
+    getSongTimeMs: () => {
+      if (songStartAudioTime === null) {
+        return 0;
+      }
+
+      const elapsedSeconds = audioContext.currentTime - songStartAudioTime;
+      return Math.max(0, elapsedSeconds * 1000);
+    },
+    dispose: async () => {
+      if (source) {
+        try {
+          source.stop();
+        } catch {
+          // The source may already have finished naturally.
+        }
+      }
+
+      await audioContext.close();
+    },
+  };
+}
+
+export async function createDemoSong(): Promise<SongController> {
   const audioContext = new AudioContext();
   const masterGain = audioContext.createGain();
   const scheduledNodes: ScheduledNode[] = [];

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { NoteCanvas } from "./components/NoteCanvas";
-import { createDemoSong, type DemoSongController } from "./game/audio";
+import { createSongFromAudioUrl, type SongController } from "./game/audio";
 import { demoChart, type Team } from "./game/chart";
 import { getTeamForKeyboardKey } from "./game/input";
 import {
@@ -21,7 +21,7 @@ const INPUT_FLASH_MS = 160;
 const JUDGMENT_FLASH_MS = 520;
 
 function App() {
-  const songRef = useRef<DemoSongController | null>(null);
+  const songRef = useRef<SongController | null>(null);
   const animationFrameRef = useRef<number | null>(null);
   const inputTimerRef = useRef<Record<Team, number | null>>({ red: null, blue: null });
   const judgedNoteIdsRef = useRef<Set<string>>(new Set());
@@ -148,7 +148,7 @@ function App() {
 
     await songRef.current?.dispose();
 
-    const song = await createDemoSong();
+    const song = await createSongFromAudioUrl(demoChart.audioUrl);
     songRef.current = song;
     judgedNoteIdsRef.current = new Set();
     setJudgedNoteIds(new Set());
