@@ -27,12 +27,37 @@ button {
 .appShell {
   display: grid;
   min-height: 100vh;
-  place-items: center;
+  align-content: center;
+  justify-items: center;
+  gap: 10px;
   padding: 20px;
   background:
     linear-gradient(90deg, rgb(220 38 38 / 0.24), transparent 34%),
     linear-gradient(270deg, rgb(37 99 235 / 0.3), transparent 34%),
     #111827;
+}
+
+.modeTabs {
+  display: grid;
+  width: min(100%, 1740px);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.modeTabs button {
+  min-height: 42px;
+  border: 2px solid rgb(255 247 237 / 0.22);
+  border-radius: 8px;
+  background: rgb(2 6 23 / 0.76);
+  color: #fff7ed;
+  font-size: clamp(16px, 2vw, 22px);
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.modeTabs button.active {
+  background: #fbbf24;
+  color: #111827;
 }
 
 .stage {
@@ -46,6 +71,253 @@ button {
   border-radius: 8px;
   background: rgb(17 24 39 / 0.78);
   box-shadow: 0 24px 80px rgb(0 0 0 / 0.36);
+}
+
+.makerStage {
+  display: grid;
+  width: min(100%, 1740px);
+  min-height: calc(100vh - 92px);
+  gap: 14px;
+  padding: clamp(14px, 2vw, 22px);
+  border: 4px solid rgb(255 247 237 / 0.18);
+  border-radius: 8px;
+  background: rgb(17 24 39 / 0.78);
+  box-shadow: 0 24px 80px rgb(0 0 0 / 0.36);
+}
+
+.makerHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+}
+
+.makerSummary {
+  display: flex;
+  gap: 10px;
+  color: #111827;
+  font-size: clamp(16px, 2vw, 24px);
+  font-weight: 900;
+}
+
+.makerSummary span {
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #fbbf24;
+}
+
+.makerGrid {
+  display: grid;
+  grid-template-columns: minmax(240px, 300px) minmax(960px, 1fr) minmax(300px, 420px);
+  gap: 14px;
+  min-height: 0;
+}
+
+.makerControls {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+}
+
+.makerControls label {
+  display: grid;
+  gap: 6px;
+  color: #e5e7eb;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.makerControls input,
+.makerControls select,
+.makerOutput textarea {
+  width: 100%;
+  border: 2px solid rgb(255 247 237 / 0.18);
+  border-radius: 8px;
+  background: #020617;
+  color: #fff7ed;
+  font: inherit;
+}
+
+.makerControls input,
+.makerControls select {
+  min-height: 44px;
+  padding: 8px 10px;
+}
+
+.makerNumberGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.dangerButton {
+  min-height: 44px;
+  border: 2px solid rgb(248 113 113 / 0.5);
+  border-radius: 8px;
+  background: rgb(127 29 29 / 0.72);
+  color: #fee2e2;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.sectionEditor {
+  display: grid;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.sectionEditorHeader {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 8px;
+  color: #fbbf24;
+  font-weight: 900;
+}
+
+.sectionEditorHeader button,
+.sectionForm button {
+  min-height: 34px;
+  border: 0;
+  border-radius: 8px;
+  background: #e5e7eb;
+  color: #111827;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.sectionForm {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 62px 62px 54px;
+  align-items: end;
+  gap: 6px;
+  padding: 8px;
+  border: 2px solid rgb(255 247 237 / 0.14);
+  border-radius: 8px;
+  background: rgb(2 6 23 / 0.48);
+}
+
+.sectionForm label {
+  font-size: 12px;
+}
+
+.sectionForm input {
+  min-height: 34px;
+  padding: 6px 8px;
+}
+
+.makerSequencer {
+  display: grid;
+  align-content: start;
+  max-height: calc(100vh - 214px);
+  gap: 6px;
+  overflow: auto;
+  padding: 10px;
+  border: 2px solid rgb(255 247 237 / 0.18);
+  border-radius: 8px;
+  background: #020617;
+}
+
+.measureRow {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+
+.measureLabel {
+  display: grid;
+  gap: 2px;
+  color: #fbbf24;
+  font-size: 14px;
+  font-weight: 900;
+  text-align: right;
+}
+
+.measureLabel strong {
+  overflow: hidden;
+  color: #e5e7eb;
+  font-size: 12px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.slotGrid {
+  display: grid;
+  grid-template-columns: repeat(16, minmax(52px, 1fr));
+  gap: 4px;
+}
+
+.slotButton {
+  min-height: 28px;
+  border: 2px solid rgb(255 247 237 / 0.16);
+  border-radius: 6px;
+  background: rgb(255 247 237 / 0.08);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.slotButton:nth-child(4n + 1) {
+  border-color: rgb(251 191 36 / 0.72);
+}
+
+.slotButton.red {
+  border-color: #fecaca;
+  background: #dc2626;
+}
+
+.slotButton.blue {
+  border-color: #bfdbfe;
+  background: #2563eb;
+}
+
+.makerOutput {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto auto;
+  gap: 10px;
+  min-height: 0;
+}
+
+.makerOutput textarea {
+  min-height: 0;
+  padding: 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.45;
+  resize: none;
+}
+
+.makerActions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.makerActions button {
+  min-height: 46px;
+  border: 0;
+  border-radius: 8px;
+  background: #e5e7eb;
+  color: #111827;
+  font-size: clamp(15px, 1.8vw, 20px);
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.makerActions button:first-child {
+  background: #fbbf24;
+}
+
+.makerStatus {
+  min-height: 22px;
+  margin: 0;
+  color: #e5e7eb;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
 }
 
 .topBar {
@@ -214,6 +486,29 @@ h1 {
   .stage {
     min-height: calc(100vh - 20px);
     gap: 10px;
+  }
+
+  .makerStage {
+    min-height: calc(100vh - 72px);
+  }
+
+  .makerHeader,
+  .makerGrid,
+  .makerActions {
+    grid-template-columns: 1fr;
+  }
+
+  .makerSequencer {
+    max-height: 420px;
+  }
+
+  .slotGrid {
+    grid-template-columns: repeat(8, minmax(30px, 1fr));
+  }
+
+  .makerSummary {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .titleBlock {

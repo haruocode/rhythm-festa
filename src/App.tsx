@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { ChartMaker } from "./components/ChartMaker";
 import { NoteCanvas } from "./components/NoteCanvas";
 import { createSongFromAudioUrl, type SongController } from "./game/audio";
 import { fallbackDemoChart, type Chart, type Team } from "./game/chart";
@@ -11,6 +12,7 @@ import {
 } from "./game/judgment";
 
 type PlayState = "idle" | "playing" | "finished";
+type AppMode = "play" | "maker";
 type TeamInputFeedback = Record<Team, number>;
 type JudgmentFeedback = {
   id: number;
@@ -20,6 +22,10 @@ type JudgmentFeedback = {
 const INPUT_FLASH_MS = 160;
 const JUDGMENT_FLASH_MS = 520;
 const DEMO_CHART_URL = "/charts/demo.json";
+
+function getModeFromPath(pathname: string): AppMode {
+  return pathname === "/maker" ? "maker" : "play";
+}
 
 function App() {
   const songRef = useRef<SongController | null>(null);
@@ -35,6 +41,7 @@ function App() {
   const [judgmentFeedback, setJudgmentFeedback] = useState<JudgmentFeedback | null>(null);
   const [chart, setChart] = useState<Chart>(fallbackDemoChart);
   const [chartLoadError, setChartLoadError] = useState<string | null>(null);
+  const [appMode, setAppMode] = useState<AppMode>(() => getModeFromPath(window.location.pathname));
 
   useEffect(() => {
     let disposed = false;
@@ -59,6 +66,18 @@ function App() {
 
     return () => {
       disposed = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setAppMode(getModeFromPath(window.location.pathname));
+    };
+
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
     };
   }, []);
 
@@ -206,6 +225,23 @@ function App() {
     setSongTimeMs(0);
   };
 
+  const applyChart = (nextChart: Chart) => {
+    void handleStop();
+    chartRef.current = nextChart;
+    setChart(nextChart);
+    setChartLoadError(null);
+  };
+
+  const navigateToMode = (mode: AppMode) => {
+    const nextPath = mode === "maker" ? "/maker" : "/";
+
+    if (window.location.pathname !== nextPath) {
+      window.history.pushState(null, "", nextPath);
+    }
+
+    setAppMode(mode);
+  };
+
   const recordJudgment = (result: JudgmentResult) => {
     if (judgedNoteIdsRef.current.has(result.noteId)) {
       return;
@@ -233,7 +269,27 @@ function App() {
 
   return (
     <main className="appShell">
-      <section className="stage" aria-labelledby="app-title">
+      <nav className="modeTabs" aria-label="表示モード">
+        <button
+          className={appMode === "play" ? "active" : ""}
+          type="button"
+          onClick={() => navigateToMode("play")}
+        >
+          プレイ
+        </button>
+        <button
+          className={appMode === "maker" ? "active" : ""}
+          type="button"
+          onClick={() => navigateToMode("maker")}
+        >
+          メイカー
+        </button>
+      </nav>
+
+      {appMode === "maker" ? (
+        <ChartMaker chart={chart} onApplyChart={applyChart} />
+      ) : (
+        <section className="stage" aria-labelledby="app-title">
         <div className="topBar">
           <div className="titleBlock">
             <p className="eyebrow">Rhythm Festa MVP</p>
@@ -290,7 +346,8 @@ function App() {
           {playState === "playing" && "タイミングよく押すと GOOD、通り過ぎると MISS。"}
           {playState === "finished" && "デモ曲が終わりました。もう一度スタートできます。"}
         </p>
-      </section>
+        </section>
+      )}
     </main>
   );
 }

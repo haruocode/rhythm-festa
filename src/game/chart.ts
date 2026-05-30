@@ -7,10 +7,18 @@ export type Note = {
   judged: boolean;
 };
 
+export type ChartSection = {
+  id: string;
+  name: string;
+  startMeasure: number;
+  endMeasure: number;
+};
+
 export type Chart = {
   title: string;
   artist?: string;
   audioUrl: string;
+  sections?: ChartSection[];
   notes: Note[];
 };
 
