@@ -9,7 +9,6 @@ import {
   judgeTeamInput,
   type JudgmentResult,
 } from "./game/judgment";
-import { formatSongTime } from "./game/timing";
 
 type PlayState = "idle" | "playing" | "finished";
 type TeamInputFeedback = Record<Team, number>;
@@ -239,11 +238,6 @@ function App() {
           <div className="titleBlock">
             <p className="eyebrow">Rhythm Festa MVP</p>
             <h1 id="app-title">リズムフェスタ</h1>
-          </div>
-
-          <div className="timePanel" aria-live="polite">
-            <span className="timeLabel">SONG TIME</span>
-            <strong>{formatSongTime(songTimeMs)}</strong>
           </div>
         </div>
 

@@ -5,7 +5,7 @@ const LOOK_AHEAD_MS = 2400;
 const LOOK_BEHIND_MS = 360;
 const JUDGMENT_LINE_RATIO = 0.78;
 const NOTE_WIDTH_RATIO = 0.78;
-const NOTE_HEIGHT_RATIO = 0.09;
+const NOTE_HEIGHT_RATIO = 0.06;
 
 type NoteCanvasProps = {
   chart: Chart;
@@ -88,7 +88,7 @@ function drawChart(
   const judgmentY = height * JUDGMENT_LINE_RATIO;
   const travelDistance = judgmentY - topPadding;
   const noteWidth = Math.max(160, laneWidth * NOTE_WIDTH_RATIO);
-  const noteHeight = Math.max(24, Math.min(38, laneWidth * NOTE_HEIGHT_RATIO));
+  const noteHeight = Math.max(16, Math.min(25, laneWidth * NOTE_HEIGHT_RATIO));
 
   drawBackground(context, width, height);
   drawLane(context, "red", 0, topPadding, laneWidth, height - bottomPadding);
