@@ -27,6 +27,19 @@ function getModeFromPath(pathname: string): AppMode {
   return pathname === "/maker" ? "maker" : "play";
 }
 
+function isEditableTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
+
+  return (
+    target.isContentEditable ||
+    target instanceof HTMLInputElement ||
+    target instanceof HTMLTextAreaElement ||
+    target instanceof HTMLSelectElement
+  );
+}
+
 function App() {
   const songRef = useRef<SongController | null>(null);
   const chartRef = useRef<Chart>(fallbackDemoChart);
@@ -34,6 +47,9 @@ function App() {
   const inputTimerRef = useRef<Record<Team, number | null>>({ red: null, blue: null });
   const judgedNoteIdsRef = useRef<Set<string>>(new Set());
   const judgmentFeedbackTimerRef = useRef<number | null>(null);
+  const playStateRef = useRef<PlayState>("idle");
+  const chartLoadErrorRef = useRef<string | null>(null);
+  const appModeRef = useRef<AppMode>(getModeFromPath(window.location.pathname));
   const [playState, setPlayState] = useState<PlayState>("idle");
   const [songTimeMs, setSongTimeMs] = useState(0);
   const [inputFeedback, setInputFeedback] = useState<TeamInputFeedback>({ red: 0, blue: 0 });
@@ -42,6 +58,18 @@ function App() {
   const [chart, setChart] = useState<Chart>(fallbackDemoChart);
   const [chartLoadError, setChartLoadError] = useState<string | null>(null);
   const [appMode, setAppMode] = useState<AppMode>(() => getModeFromPath(window.location.pathname));
+
+  useEffect(() => {
+    playStateRef.current = playState;
+  }, [playState]);
+
+  useEffect(() => {
+    chartLoadErrorRef.current = chartLoadError;
+  }, [chartLoadError]);
+
+  useEffect(() => {
+    appModeRef.current = appMode;
+  }, [appMode]);
 
   useEffect(() => {
     let disposed = false;
@@ -84,6 +112,22 @@ function App() {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.repeat) {
+        return;
+      }
+
+      if (event.code === "Space" && !isEditableTarget(event.target)) {
+        if (appModeRef.current !== "play") {
+          return;
+        }
+
+        event.preventDefault();
+
+        if (playStateRef.current === "playing") {
+          void handleStop();
+        } else if (chartLoadErrorRef.current === null) {
+          void handleStart();
+        }
+
         return;
       }
 
@@ -192,6 +236,10 @@ function App() {
   };
 
   const handleStart = async () => {
+    if (playStateRef.current === "playing" || chartLoadErrorRef.current !== null) {
+      return;
+    }
+
     if (animationFrameRef.current !== null) {
       cancelAnimationFrame(animationFrameRef.current);
     }
