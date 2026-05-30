@@ -8,6 +8,7 @@ const NOTE_RADIUS_RATIO = 0.085;
 
 type NoteCanvasProps = {
   chart: Chart;
+  judgedNoteIds: ReadonlySet<string>;
   songTimeMs: number;
 };
 
@@ -30,7 +31,7 @@ const laneStyles: Record<Team, LaneStyle> = {
   },
 };
 
-export function NoteCanvas({ chart, songTimeMs }: NoteCanvasProps) {
+export function NoteCanvas({ chart, judgedNoteIds, songTimeMs }: NoteCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
@@ -57,8 +58,8 @@ export function NoteCanvas({ chart, songTimeMs }: NoteCanvasProps) {
     }
 
     context.setTransform(dpr, 0, 0, dpr, 0, 0);
-    drawChart(context, rect.width, rect.height, chart, songTimeMs);
-  }, [chart, songTimeMs]);
+    drawChart(context, rect.width, rect.height, chart, judgedNoteIds, songTimeMs);
+  }, [chart, judgedNoteIds, songTimeMs]);
 
   return (
     <canvas
@@ -74,6 +75,7 @@ function drawChart(
   width: number,
   height: number,
   chart: Chart,
+  judgedNoteIds: ReadonlySet<string>,
   songTimeMs: number,
 ) {
   context.clearRect(0, 0, width, height);
@@ -92,6 +94,10 @@ function drawChart(
   drawJudgmentLine(context, width, judgmentY);
 
   for (const note of chart.notes) {
+    if (judgedNoteIds.has(note.id)) {
+      continue;
+    }
+
     const deltaMs = note.timeMs - songTimeMs;
 
     if (deltaMs > LOOK_AHEAD_MS || deltaMs < -LOOK_BEHIND_MS) {

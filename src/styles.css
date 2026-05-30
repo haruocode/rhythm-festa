@@ -150,6 +150,40 @@ h1 {
   box-shadow: 0 0 28px rgb(96 165 250 / 0.62);
 }
 
+.judgmentFlash {
+  position: absolute;
+  top: 44%;
+  left: 50%;
+  display: grid;
+  min-width: min(78%, 520px);
+  min-height: 112px;
+  place-items: center;
+  border-radius: 8px;
+  color: #111827;
+  font-size: clamp(44px, 8vw, 88px);
+  font-weight: 1000;
+  line-height: 1;
+  transform: translate(-50%, -50%);
+  animation: judgment-pop 520ms ease-out;
+  pointer-events: none;
+}
+
+.judgmentFlash.perfect {
+  background: #fbbf24;
+  box-shadow: 0 0 48px rgb(251 191 36 / 0.72);
+}
+
+.judgmentFlash.good {
+  background: #34d399;
+  box-shadow: 0 0 44px rgb(52 211 153 / 0.68);
+}
+
+.judgmentFlash.miss {
+  background: #94a3b8;
+  color: #0f172a;
+  box-shadow: 0 0 34px rgb(148 163 184 / 0.46);
+}
+
 .buttonRow {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -278,5 +312,22 @@ h1 {
   to {
     transform: scale(1);
     opacity: 1;
+  }
+}
+
+@keyframes judgment-pop {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.76);
+  }
+
+  22% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.08);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -58%) scale(1);
   }
 }
