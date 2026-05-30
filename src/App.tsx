@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { NoteCanvas } from "./components/NoteCanvas";
 import { createSongFromAudioUrl, type SongController } from "./game/audio";
-import { demoChart, type Team } from "./game/chart";
+import { fallbackDemoChart, type Chart, type Team } from "./game/chart";
+import { loadChartFromUrl } from "./game/chartLoader";
 import { getTeamForKeyboardKey } from "./game/input";
 import {
   findMissedNotes,
@@ -19,9 +20,11 @@ type JudgmentFeedback = {
 
 const INPUT_FLASH_MS = 160;
 const JUDGMENT_FLASH_MS = 520;
+const DEMO_CHART_URL = "/charts/demo.json";
 
 function App() {
   const songRef = useRef<SongController | null>(null);
+  const chartRef = useRef<Chart>(fallbackDemoChart);
   const animationFrameRef = useRef<number | null>(null);
   const inputTimerRef = useRef<Record<Team, number | null>>({ red: null, blue: null });
   const judgedNoteIdsRef = useRef<Set<string>>(new Set());
@@ -31,6 +34,34 @@ function App() {
   const [inputFeedback, setInputFeedback] = useState<TeamInputFeedback>({ red: 0, blue: 0 });
   const [judgedNoteIds, setJudgedNoteIds] = useState<ReadonlySet<string>>(new Set());
   const [judgmentFeedback, setJudgmentFeedback] = useState<JudgmentFeedback | null>(null);
+  const [chart, setChart] = useState<Chart>(fallbackDemoChart);
+  const [chartLoadError, setChartLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let disposed = false;
+
+    loadChartFromUrl(DEMO_CHART_URL)
+      .then((loadedChart) => {
+        if (disposed) {
+          return;
+        }
+
+        chartRef.current = loadedChart;
+        setChart(loadedChart);
+        setChartLoadError(null);
+      })
+      .catch((error: unknown) => {
+        if (disposed) {
+          return;
+        }
+
+        setChartLoadError(error instanceof Error ? error.message : "Failed to load chart.");
+      });
+
+    return () => {
+      disposed = true;
+    };
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -52,8 +83,9 @@ function App() {
         return;
       }
 
+      const currentChart = chartRef.current;
       const result = judgeTeamInput(
-        demoChart.notes,
+        currentChart.notes,
         judgedNoteIdsRef.current,
         team,
         song.getSongTimeMs(),
@@ -127,7 +159,7 @@ function App() {
     const nextSongTimeMs = song.getSongTimeMs();
     setSongTimeMs(nextSongTimeMs);
 
-    const missedNotes = findMissedNotes(demoChart.notes, judgedNoteIdsRef.current, nextSongTimeMs);
+    const missedNotes = findMissedNotes(chartRef.current.notes, judgedNoteIdsRef.current, nextSongTimeMs);
 
     for (const missedNote of missedNotes) {
       recordJudgment(missedNote);
@@ -148,7 +180,8 @@ function App() {
 
     await songRef.current?.dispose();
 
-    const song = await createSongFromAudioUrl(demoChart.audioUrl);
+    const currentChart = chartRef.current;
+    const song = await createSongFromAudioUrl(currentChart.audioUrl);
     songRef.current = song;
     judgedNoteIdsRef.current = new Set();
     setJudgedNoteIds(new Set());
@@ -215,7 +248,7 @@ function App() {
         </div>
 
         <div className="canvasWrap">
-          <NoteCanvas chart={demoChart} judgedNoteIds={judgedNoteIds} songTimeMs={songTimeMs} />
+          <NoteCanvas chart={chart} judgedNoteIds={judgedNoteIds} songTimeMs={songTimeMs} />
           <div className="inputFlashLayer" aria-live="polite">
             {inputFeedback.red > 0 && <div className="inputFlash red">RED!</div>}
             {inputFeedback.blue > 0 && <div className="inputFlash blue">BLUE!</div>}
@@ -236,7 +269,7 @@ function App() {
             className="primaryButton"
             type="button"
             onClick={handleStart}
-            disabled={playState === "playing"}
+            disabled={playState === "playing" || chartLoadError !== null}
           >
             スタート
           </button>
@@ -262,7 +295,8 @@ function App() {
         </div>
 
         <p className="statusText">
-          {playState === "idle" && "スタートを押すと、Web Audio API のデモ曲が流れます。"}
+          {chartLoadError && `チャート読み込みエラー: ${chartLoadError}`}
+          {!chartLoadError && playState === "idle" && `${chart.title} を読み込みました。スタートできます。`}
           {playState === "playing" && "タイミングよく押すと PERFECT / GOOD、通り過ぎると MISS。"}
           {playState === "finished" && "デモ曲が終わりました。もう一度スタートできます。"}
         </p>

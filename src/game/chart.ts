@@ -33,7 +33,7 @@ const notePattern: Team[] = [
   "blue",
 ];
 
-export const demoChart: Chart = {
+export const fallbackDemoChart: Chart = {
   title: "Festival Demo",
   artist: "Rhythm Festa",
   audioUrl: "/music/demo.mp3",

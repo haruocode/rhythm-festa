@@ -1,0 +1,23 @@
+{
+  "title": "Festival Demo",
+  "artist": "Rhythm Festa",
+  "audioUrl": "/music/demo.mp3",
+  "notes": [
+    { "id": "demo-note-1", "timeMs": 1000, "team": "red" },
+    { "id": "demo-note-2", "timeMs": 1520, "team": "blue" },
+    { "id": "demo-note-3", "timeMs": 2040, "team": "red" },
+    { "id": "demo-note-4", "timeMs": 2560, "team": "blue" },
+    { "id": "demo-note-5", "timeMs": 3080, "team": "red" },
+    { "id": "demo-note-6", "timeMs": 3600, "team": "red" },
+    { "id": "demo-note-7", "timeMs": 4120, "team": "blue" },
+    { "id": "demo-note-8", "timeMs": 4640, "team": "blue" },
+    { "id": "demo-note-9", "timeMs": 5160, "team": "red" },
+    { "id": "demo-note-10", "timeMs": 5680, "team": "blue" },
+    { "id": "demo-note-11", "timeMs": 6200, "team": "blue" },
+    { "id": "demo-note-12", "timeMs": 6720, "team": "red" },
+    { "id": "demo-note-13", "timeMs": 7240, "team": "red" },
+    { "id": "demo-note-14", "timeMs": 7760, "team": "blue" },
+    { "id": "demo-note-15", "timeMs": 8280, "team": "red" },
+    { "id": "demo-note-16", "timeMs": 8800, "team": "blue" }
+  ]
+}
