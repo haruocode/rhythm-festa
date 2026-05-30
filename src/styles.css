@@ -38,24 +38,33 @@ button {
 .stage {
   display: grid;
   width: min(100%, 980px);
-  min-height: min(720px, calc(100vh - 64px));
+  min-height: min(760px, calc(100vh - 64px));
   align-content: center;
-  gap: 28px;
-  padding: clamp(24px, 5vw, 56px);
+  gap: 16px;
+  padding: clamp(18px, 3vw, 32px);
   border: 4px solid rgb(255 247 237 / 0.18);
   border-radius: 8px;
   background: rgb(17 24 39 / 0.78);
   box-shadow: 0 24px 80px rgb(0 0 0 / 0.36);
 }
 
+.topBar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 360px);
+  align-items: stretch;
+  gap: 16px;
+}
+
 .titleBlock {
-  text-align: center;
+  display: grid;
+  align-content: center;
+  text-align: left;
 }
 
 .eyebrow {
-  margin: 0 0 10px;
+  margin: 0 0 8px;
   color: #fbbf24;
-  font-size: clamp(18px, 3vw, 28px);
+  font-size: clamp(16px, 2.3vw, 22px);
   font-weight: 800;
   letter-spacing: 0;
   text-transform: uppercase;
@@ -63,16 +72,17 @@ button {
 
 h1 {
   margin: 0;
-  font-size: clamp(44px, 9vw, 96px);
+  font-size: clamp(36px, 5vw, 60px);
   line-height: 1;
   letter-spacing: 0;
 }
 
 .timePanel {
   display: grid;
-  gap: 8px;
+  gap: 4px;
   justify-items: center;
-  padding: clamp(20px, 4vw, 36px);
+  min-height: 118px;
+  padding: 16px;
   border: 3px solid rgb(255 247 237 / 0.28);
   border-radius: 8px;
   background: #020617;
@@ -80,16 +90,24 @@ h1 {
 
 .timeLabel {
   color: #93c5fd;
-  font-size: clamp(18px, 3vw, 28px);
+  font-size: clamp(16px, 2.2vw, 22px);
   font-weight: 900;
   letter-spacing: 0;
 }
 
 .timePanel strong {
   color: #ffffff;
-  font-size: clamp(48px, 12vw, 128px);
+  font-size: clamp(34px, 5vw, 54px);
   line-height: 0.95;
   letter-spacing: 0;
+}
+
+.noteCanvas {
+  width: 100%;
+  height: clamp(300px, 44vh, 430px);
+  border: 4px solid rgb(255 247 237 / 0.2);
+  border-radius: 8px;
+  background: #020617;
 }
 
 .buttonRow {
@@ -100,7 +118,7 @@ h1 {
 
 .primaryButton,
 .secondaryButton {
-  min-height: 84px;
+  min-height: 72px;
   border: 0;
   border-radius: 8px;
   color: #111827;
@@ -131,7 +149,7 @@ h1 {
 
 .team {
   display: grid;
-  min-height: 128px;
+  min-height: 92px;
   align-content: center;
   justify-items: center;
   border-radius: 8px;
@@ -172,7 +190,19 @@ h1 {
 
   .stage {
     min-height: calc(100vh - 32px);
-    gap: 18px;
+    gap: 14px;
+  }
+
+  .topBar {
+    grid-template-columns: 1fr;
+  }
+
+  .titleBlock {
+    text-align: center;
+  }
+
+  .noteCanvas {
+    height: 320px;
   }
 
   .buttonRow,

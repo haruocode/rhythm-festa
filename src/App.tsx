@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
+import { NoteCanvas } from "./components/NoteCanvas";
 import { createDemoSong, type DemoSongController } from "./game/audio";
+import { demoChart } from "./game/chart";
 import { formatSongTime } from "./game/timing";
 
 type PlayState = "idle" | "playing" | "finished";
@@ -68,15 +70,19 @@ function App() {
   return (
     <main className="appShell">
       <section className="stage" aria-labelledby="app-title">
-        <div className="titleBlock">
-          <p className="eyebrow">Rhythm Festa MVP</p>
-          <h1 id="app-title">リズムフェスタ</h1>
+        <div className="topBar">
+          <div className="titleBlock">
+            <p className="eyebrow">Rhythm Festa MVP</p>
+            <h1 id="app-title">リズムフェスタ</h1>
+          </div>
+
+          <div className="timePanel" aria-live="polite">
+            <span className="timeLabel">SONG TIME</span>
+            <strong>{formatSongTime(songTimeMs)}</strong>
+          </div>
         </div>
 
-        <div className="timePanel" aria-live="polite">
-          <span className="timeLabel">SONG TIME</span>
-          <strong>{formatSongTime(songTimeMs)}</strong>
-        </div>
+        <NoteCanvas chart={demoChart} songTimeMs={songTimeMs} />
 
         <div className="buttonRow">
           <button
@@ -110,7 +116,7 @@ function App() {
 
         <p className="statusText">
           {playState === "idle" && "スタートを押すと、Web Audio API のデモ曲が流れます。"}
-          {playState === "playing" && "AudioContext.currentTime を基準に計測中です。"}
+          {playState === "playing" && "赤と青のノーツが判定ラインに向かって落ちています。"}
           {playState === "finished" && "デモ曲が終わりました。もう一度スタートできます。"}
         </p>
       </section>
