@@ -249,10 +249,6 @@ function App() {
 
         <div className="canvasWrap">
           <NoteCanvas chart={chart} judgedNoteIds={judgedNoteIds} songTimeMs={songTimeMs} />
-          <div className="inputFlashLayer" aria-live="polite">
-            {inputFeedback.red > 0 && <div className="inputFlash red">RED!</div>}
-            {inputFeedback.blue > 0 && <div className="inputFlash blue">BLUE!</div>}
-          </div>
           {judgmentFeedback && (
             <div
               key={judgmentFeedback.id}

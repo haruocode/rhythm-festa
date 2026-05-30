@@ -114,42 +114,6 @@ h1 {
   background: #020617;
 }
 
-.inputFlashLayer {
-  position: absolute;
-  right: 20px;
-  bottom: 20px;
-  left: 20px;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
-  pointer-events: none;
-}
-
-.inputFlash {
-  display: grid;
-  place-items: center;
-  min-height: 64px;
-  border-radius: 8px;
-  color: #ffffff;
-  font-size: clamp(26px, 4vw, 42px);
-  font-weight: 900;
-  line-height: 1;
-  transform: scale(1);
-  animation: input-pop 160ms ease-out;
-}
-
-.inputFlash.red {
-  grid-column: 1;
-  background: #f87171;
-  box-shadow: 0 0 28px rgb(248 113 113 / 0.62);
-}
-
-.inputFlash.blue {
-  grid-column: 2;
-  background: #60a5fa;
-  box-shadow: 0 0 28px rgb(96 165 250 / 0.62);
-}
-
 .judgmentFlash {
   position: absolute;
   top: 44%;
@@ -293,18 +257,6 @@ h1 {
     height: 320px;
   }
 
-  .inputFlashLayer {
-    grid-template-columns: 1fr;
-    right: 14px;
-    bottom: 14px;
-    left: 14px;
-  }
-
-  .inputFlash.red,
-  .inputFlash.blue {
-    grid-column: 1;
-  }
-
   .judgmentFlash {
     width: min(82%, 360px);
   }
@@ -322,18 +274,6 @@ h1 {
   .buttonRow,
   .teamPreview {
     grid-template-columns: 1fr;
-  }
-}
-
-@keyframes input-pop {
-  from {
-    transform: scale(0.92);
-    opacity: 0.7;
-  }
-
-  to {
-    transform: scale(1);
-    opacity: 1;
   }
 }
 
