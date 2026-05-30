@@ -4,7 +4,8 @@ import type { Chart, Team } from "../game/chart";
 const LOOK_AHEAD_MS = 2400;
 const LOOK_BEHIND_MS = 360;
 const JUDGMENT_LINE_RATIO = 0.78;
-const NOTE_RADIUS_RATIO = 0.085;
+const NOTE_WIDTH_RATIO = 0.78;
+const NOTE_HEIGHT_RATIO = 0.14;
 
 type NoteCanvasProps = {
   chart: Chart;
@@ -86,7 +87,8 @@ function drawChart(
   const laneWidth = (width - laneGap) / 2;
   const judgmentY = height * JUDGMENT_LINE_RATIO;
   const travelDistance = judgmentY - topPadding;
-  const noteRadius = Math.max(20, Math.min(42, laneWidth * NOTE_RADIUS_RATIO));
+  const noteWidth = Math.max(160, laneWidth * NOTE_WIDTH_RATIO);
+  const noteHeight = Math.max(34, Math.min(58, laneWidth * NOTE_HEIGHT_RATIO));
 
   drawBackground(context, width, height);
   drawLane(context, "red", 0, topPadding, laneWidth, height - bottomPadding);
@@ -108,7 +110,7 @@ function drawChart(
     const centerX = laneX + laneWidth / 2;
     const progress = 1 - deltaMs / LOOK_AHEAD_MS;
     const centerY = topPadding + progress * travelDistance;
-    drawNote(context, note.team, centerX, centerY, noteRadius);
+    drawNote(context, note.team, centerX, centerY, noteWidth, noteHeight);
   }
 }
 
@@ -147,8 +149,20 @@ function drawLane(
 }
 
 function drawJudgmentLine(context: CanvasRenderingContext2D, width: number, y: number) {
+  context.fillStyle = "rgb(251 191 36 / 0.2)";
+  context.fillRect(0, y - 26, width, 52);
+
+  context.strokeStyle = "rgb(255 247 237 / 0.56)";
+  context.lineWidth = 2;
+  context.beginPath();
+  context.moveTo(0, y - 26);
+  context.lineTo(width, y - 26);
+  context.moveTo(0, y + 26);
+  context.lineTo(width, y + 26);
+  context.stroke();
+
   context.strokeStyle = "#fbbf24";
-  context.lineWidth = 8;
+  context.lineWidth = 6;
   context.beginPath();
   context.moveTo(0, y);
   context.lineTo(width, y);
@@ -166,23 +180,31 @@ function drawNote(
   team: Team,
   centerX: number,
   centerY: number,
-  radius: number,
+  width: number,
+  height: number,
 ) {
   const style = laneStyles[team];
+  const x = centerX - width / 2;
+  const y = centerY - height / 2;
 
   context.save();
   context.shadowBlur = 22;
   context.shadowColor = style.fill;
   context.fillStyle = style.fill;
-  context.beginPath();
-  context.arc(centerX, centerY, radius, 0, Math.PI * 2);
+  roundRect(context, x, y, width, height, 8);
   context.fill();
   context.restore();
 
   context.strokeStyle = "#fff7ed";
-  context.lineWidth = 5;
+  context.lineWidth = 4;
+  roundRect(context, x + 2, y + 2, width - 4, height - 4, 6);
+  context.stroke();
+
+  context.strokeStyle = "rgb(255 247 237 / 0.82)";
+  context.lineWidth = 3;
   context.beginPath();
-  context.arc(centerX, centerY, radius - 2.5, 0, Math.PI * 2);
+  context.moveTo(x + 14, centerY);
+  context.lineTo(x + width - 14, centerY);
   context.stroke();
 }
 
