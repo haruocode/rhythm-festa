@@ -256,7 +256,7 @@ function App() {
           {judgmentFeedback && (
             <div
               key={judgmentFeedback.id}
-              className={`judgmentFlash ${judgmentFeedback.result.judgment}`}
+              className={`judgmentFlash ${judgmentFeedback.result.team} ${judgmentFeedback.result.judgment}`}
               aria-live="polite"
             >
               {judgmentFeedback.result.judgment.toUpperCase()}

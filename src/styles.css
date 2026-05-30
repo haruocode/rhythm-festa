@@ -155,7 +155,7 @@ h1 {
   top: 44%;
   left: 50%;
   display: grid;
-  min-width: min(78%, 520px);
+  width: min(40%, 360px);
   min-height: 112px;
   place-items: center;
   border-radius: 8px;
@@ -166,6 +166,14 @@ h1 {
   transform: translate(-50%, -50%);
   animation: judgment-pop 520ms ease-out;
   pointer-events: none;
+}
+
+.judgmentFlash.red {
+  left: 25%;
+}
+
+.judgmentFlash.blue {
+  left: 75%;
 }
 
 .judgmentFlash.perfect {
@@ -295,6 +303,20 @@ h1 {
   .inputFlash.red,
   .inputFlash.blue {
     grid-column: 1;
+  }
+
+  .judgmentFlash {
+    width: min(82%, 360px);
+  }
+
+  .judgmentFlash.red {
+    top: 38%;
+    left: 50%;
+  }
+
+  .judgmentFlash.blue {
+    top: 58%;
+    left: 50%;
   }
 
   .buttonRow,
