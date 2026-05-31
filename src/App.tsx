@@ -12,7 +12,7 @@ import {
 } from "./game/cloudApi";
 import { getTeamForKeyboardKey } from "./game/input";
 import {
-  findMissedNotes,
+  findPassedNotes,
   judgeTeamInput,
   type JudgmentResult,
 } from "./game/judgment";
@@ -230,7 +230,7 @@ function App() {
     const nextSongTimeMs = song.getSongTimeMs();
     setSongTimeMs(nextSongTimeMs);
 
-    const missedNotes = findMissedNotes(chartRef.current.notes, judgedNoteIdsRef.current, nextSongTimeMs);
+    const missedNotes = findPassedNotes(chartRef.current.notes, judgedNoteIdsRef.current, nextSongTimeMs);
 
     for (const missedNote of missedNotes) {
       recordJudgment(missedNote);
@@ -329,10 +329,12 @@ function App() {
     judgedNoteIdsRef.current = nextJudgedNoteIds;
     setJudgedNoteIds(nextJudgedNoteIds);
 
-    setJudgmentFeedback({
-      id: performance.now(),
-      result,
-    });
+    if (result.judgment !== "miss") {
+      setJudgmentFeedback({
+        id: performance.now(),
+        result,
+      });
+    }
 
     if (judgmentFeedbackTimerRef.current !== null) {
       window.clearTimeout(judgmentFeedbackTimerRef.current);
@@ -428,7 +430,7 @@ function App() {
         <p className="statusText">
           {chartLoadError && `チャート読み込みエラー: ${chartLoadError}`}
           {!chartLoadError && playState === "idle" && `${chart.title} を読み込みました。スタートできます。`}
-          {playState === "playing" && "タイミングよく押すと GOOD、通り過ぎると MISS。"}
+          {playState === "playing" && "タイミングよく押すと GOOD。押さないバーは下まで流れます。"}
           {playState === "finished" && "デモ曲が終わりました。もう一度スタートできます。"}
         </p>
         </section>

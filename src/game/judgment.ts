@@ -4,6 +4,7 @@ export type Judgment = "good" | "miss";
 
 export const JUDGMENT_WINDOWS = {
   good: 220,
+  missedNoteCleanup: 720,
 } as const;
 
 export type JudgmentResult = {
@@ -57,6 +58,21 @@ export function findMissedNotes(
 ): JudgmentResult[] {
   return notes
     .filter((note) => !judgedNoteIds.has(note.id) && songTimeMs - note.timeMs > JUDGMENT_WINDOWS.good)
+    .map((note) => ({
+      noteId: note.id,
+      team: note.team,
+      judgment: "miss",
+      timingDeltaMs: songTimeMs - note.timeMs,
+    }));
+}
+
+export function findPassedNotes(
+  notes: Note[],
+  judgedNoteIds: ReadonlySet<string>,
+  songTimeMs: number,
+): JudgmentResult[] {
+  return notes
+    .filter((note) => !judgedNoteIds.has(note.id) && songTimeMs - note.timeMs > JUDGMENT_WINDOWS.missedNoteCleanup)
     .map((note) => ({
       noteId: note.id,
       team: note.team,

@@ -2,7 +2,6 @@ import { useEffect, useRef } from "react";
 import type { Chart, Team } from "../game/chart";
 
 const LOOK_AHEAD_MS = 2400;
-const LOOK_BEHIND_MS = 360;
 const JUDGMENT_LINE_RATIO = 0.78;
 const NOTE_WIDTH_RATIO = 0.78;
 const NOTE_HEIGHT_RATIO = 0.06;
@@ -89,6 +88,8 @@ function drawChart(
   const travelDistance = judgmentY - topPadding;
   const noteWidth = Math.max(160, laneWidth * NOTE_WIDTH_RATIO);
   const noteHeight = Math.max(16, Math.min(25, laneWidth * NOTE_HEIGHT_RATIO));
+  const screenOutY = height + noteHeight / 2;
+  const lookBehindMs = ((screenOutY - judgmentY) / travelDistance) * LOOK_AHEAD_MS;
 
   drawBackground(context, width, height);
   drawLane(context, "red", 0, topPadding, laneWidth, height - bottomPadding);
@@ -102,7 +103,7 @@ function drawChart(
 
     const deltaMs = note.timeMs - songTimeMs;
 
-    if (deltaMs > LOOK_AHEAD_MS || deltaMs < -LOOK_BEHIND_MS) {
+    if (deltaMs > LOOK_AHEAD_MS || deltaMs < -lookBehindMs) {
       continue;
     }
 
