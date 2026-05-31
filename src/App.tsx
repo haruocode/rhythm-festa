@@ -4,6 +4,12 @@ import { NoteCanvas } from "./components/NoteCanvas";
 import { createSongFromAudioUrl, type SongController } from "./game/audio";
 import { fallbackDemoChart, type Chart, type Team } from "./game/chart";
 import { loadChartFromUrl } from "./game/chartLoader";
+import {
+  deleteChartFromCloud,
+  saveChartToCloud,
+  uploadMusicToCloud,
+  type UploadedMusic,
+} from "./game/cloudApi";
 import { getTeamForKeyboardKey } from "./game/input";
 import {
   findMissedNotes,
@@ -21,7 +27,9 @@ type JudgmentFeedback = {
 
 const INPUT_FLASH_MS = 160;
 const JUDGMENT_FLASH_MS = 520;
-const DEMO_CHART_URL = "/charts/demo.json";
+const DEMO_CHART_ID = "demo";
+const CLOUD_DEMO_CHART_URL = `/api/charts/${DEMO_CHART_ID}`;
+const FALLBACK_DEMO_CHART_URL = "/charts/demo.json";
 
 function getModeFromPath(pathname: string): AppMode {
   return pathname === "/maker" ? "maker" : "play";
@@ -56,6 +64,7 @@ function App() {
   const [judgedNoteIds, setJudgedNoteIds] = useState<ReadonlySet<string>>(new Set());
   const [judgmentFeedback, setJudgmentFeedback] = useState<JudgmentFeedback | null>(null);
   const [chart, setChart] = useState<Chart>(fallbackDemoChart);
+  const [chartId, setChartId] = useState(DEMO_CHART_ID);
   const [chartLoadError, setChartLoadError] = useState<string | null>(null);
   const [appMode, setAppMode] = useState<AppMode>(() => getModeFromPath(window.location.pathname));
 
@@ -74,7 +83,7 @@ function App() {
   useEffect(() => {
     let disposed = false;
 
-    loadChartFromUrl(DEMO_CHART_URL)
+    loadDefaultChart()
       .then((loadedChart) => {
         if (disposed) {
           return;
@@ -280,6 +289,26 @@ function App() {
     setChartLoadError(null);
   };
 
+  const loadCloudChart = async (nextChartId: string) => {
+    const loadedChart = await loadChartFromUrl(`/api/charts/${encodeURIComponent(nextChartId)}`);
+    setChartId(nextChartId);
+    applyChart(loadedChart);
+  };
+
+  const saveChart = async (nextChartId: string, nextChart: Chart, adminToken: string) => {
+    await saveChartToCloud(nextChartId, nextChart, adminToken);
+    setChartId(nextChartId);
+    applyChart(nextChart);
+  };
+
+  const deleteChart = async (nextChartId: string, adminToken: string) => {
+    await deleteChartFromCloud(nextChartId, adminToken);
+  };
+
+  const uploadMusic = async (file: File, adminToken: string): Promise<UploadedMusic> => {
+    return await uploadMusicToCloud(file, adminToken);
+  };
+
   const navigateToMode = (mode: AppMode) => {
     const nextPath = mode === "maker" ? "/maker" : "/";
 
@@ -335,7 +364,15 @@ function App() {
       </nav>
 
       {appMode === "maker" ? (
-        <ChartMaker chart={chart} onApplyChart={applyChart} />
+        <ChartMaker
+          chart={chart}
+          chartId={chartId}
+          onApplyChart={applyChart}
+          onDeleteChart={deleteChart}
+          onLoadChart={loadCloudChart}
+          onSaveChart={saveChart}
+          onUploadMusic={uploadMusic}
+        />
       ) : (
         <section className="stage" aria-labelledby="app-title">
         <div className="topBar">
@@ -401,3 +438,11 @@ function App() {
 }
 
 export default App;
+
+async function loadDefaultChart(): Promise<Chart> {
+  try {
+    return await loadChartFromUrl(CLOUD_DEMO_CHART_URL);
+  } catch {
+    return await loadChartFromUrl(FALLBACK_DEMO_CHART_URL);
+  }
+}

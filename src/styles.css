@@ -311,6 +311,11 @@ button {
   background: #fbbf24;
 }
 
+.makerActions button:disabled {
+  cursor: wait;
+  opacity: 0.68;
+}
+
 .makerStatus {
   min-height: 22px;
   margin: 0;

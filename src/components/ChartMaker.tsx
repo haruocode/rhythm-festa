@@ -1,9 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Chart, ChartSection, Note, Team } from "../game/chart";
+import { ADMIN_TOKEN_STORAGE_KEY, type UploadedMusic } from "../game/cloudApi";
 
 type ChartMakerProps = {
   chart: Chart;
+  chartId: string;
   onApplyChart: (chart: Chart) => void;
+  onDeleteChart: (chartId: string, adminToken: string) => Promise<void>;
+  onLoadChart: (chartId: string) => Promise<void>;
+  onSaveChart: (chartId: string, chart: Chart, adminToken: string) => Promise<void>;
+  onUploadMusic: (file: File, adminToken: string) => Promise<UploadedMusic>;
 };
 
 type MakerForm = {
@@ -22,11 +28,27 @@ type MakerSection = ChartSection;
 const SLOTS_PER_MEASURE = 16;
 const BEATS_PER_MEASURE = 4;
 
-export function ChartMaker({ chart, onApplyChart }: ChartMakerProps) {
+export function ChartMaker({
+  chart,
+  chartId,
+  onApplyChart,
+  onDeleteChart,
+  onLoadChart,
+  onSaveChart,
+  onUploadMusic,
+}: ChartMakerProps) {
   const [form, setForm] = useState<MakerForm>(() => createInitialForm(chart));
   const [slots, setSlots] = useState<SlotMap>(() => createInitialSlots(chart, createInitialForm(chart)));
   const [sections, setSections] = useState<MakerSection[]>(() => createInitialSections(chart));
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
+  const [cloudState, setCloudState] = useState<
+    "idle" | "loading" | "loaded" | "saving" | "saved" | "deleting" | "deleted" | "failed"
+  >("idle");
+  const [cloudError, setCloudError] = useState<string | null>(null);
+  const [uploadState, setUploadState] = useState<"idle" | "uploading" | "uploaded" | "failed">("idle");
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [makerChartId, setMakerChartId] = useState(chartId);
+  const [adminToken, setAdminToken] = useState(() => localStorage.getItem(ADMIN_TOKEN_STORAGE_KEY) ?? "");
 
   useEffect(() => {
     const nextForm = createInitialForm(chart);
@@ -34,6 +56,10 @@ export function ChartMaker({ chart, onApplyChart }: ChartMakerProps) {
     setSlots(createInitialSlots(chart, nextForm));
     setSections(createInitialSections(chart));
   }, [chart]);
+
+  useEffect(() => {
+    setMakerChartId(chartId);
+  }, [chartId]);
 
   const sixteenthMs = getSixteenthMs(form.quarterNoteMs);
   const measureCount = getMeasureCount(form.firstTimeMs, form.endTimeMs, sixteenthMs);
@@ -105,6 +131,113 @@ export function ChartMaker({ chart, onApplyChart }: ChartMakerProps) {
     URL.revokeObjectURL(url);
   };
 
+  const updateAdminToken = (value: string) => {
+    setAdminToken(value);
+
+    if (value.trim()) {
+      localStorage.setItem(ADMIN_TOKEN_STORAGE_KEY, value);
+    } else {
+      localStorage.removeItem(ADMIN_TOKEN_STORAGE_KEY);
+    }
+  };
+
+  const handleSave = async () => {
+    const nextChartId = normalizeChartId(makerChartId);
+
+    setUploadState("idle");
+
+    if (!nextChartId) {
+      setCloudState("failed");
+      setCloudError("譜面IDは小文字英数字とハイフンで入力してください。");
+      return;
+    }
+
+    setCloudState("saving");
+    setCloudError(null);
+
+    try {
+      await onSaveChart(nextChartId, generatedChart, adminToken);
+      setMakerChartId(nextChartId);
+      setCloudState("saved");
+    } catch (error) {
+      setCloudState("failed");
+      setCloudError(error instanceof Error ? error.message : "保存できませんでした。");
+    }
+  };
+
+  const handleLoad = async () => {
+    const nextChartId = normalizeChartId(makerChartId);
+
+    setUploadState("idle");
+
+    if (!nextChartId) {
+      setCloudState("failed");
+      setCloudError("譜面IDは小文字英数字とハイフンで入力してください。");
+      return;
+    }
+
+    setCloudState("loading");
+    setCloudError(null);
+
+    try {
+      await onLoadChart(nextChartId);
+      setMakerChartId(nextChartId);
+      setCloudState("loaded");
+    } catch (error) {
+      setCloudState("failed");
+      setCloudError(error instanceof Error ? error.message : "読み込めませんでした。");
+    }
+  };
+
+  const handleDelete = async () => {
+    const nextChartId = normalizeChartId(makerChartId);
+
+    setUploadState("idle");
+
+    if (!nextChartId) {
+      setCloudState("failed");
+      setCloudError("譜面IDは小文字英数字とハイフンで入力してください。");
+      return;
+    }
+
+    if (!window.confirm(`${nextChartId} をR2から削除しますか？`)) {
+      return;
+    }
+
+    setCloudState("deleting");
+    setCloudError(null);
+
+    try {
+      await onDeleteChart(nextChartId, adminToken);
+      setCloudState("deleted");
+    } catch (error) {
+      setCloudState("failed");
+      setCloudError(error instanceof Error ? error.message : "削除できませんでした。");
+    }
+  };
+
+  const handleUploadMusic = async (file: File | undefined) => {
+    if (!file) {
+      return;
+    }
+
+    setUploadState("uploading");
+    setUploadError(null);
+    setCloudState("idle");
+
+    try {
+      const uploadedMusic = await onUploadMusic(file, adminToken);
+      setForm((current) => ({
+        ...current,
+        audioUrl: uploadedMusic.audioUrl,
+      }));
+      setUploadState("uploaded");
+    } catch (error) {
+      setUploadState("failed");
+      setUploadError(error instanceof Error ? error.message : "MP3をアップロードできませんでした。");
+    }
+  };
+
   const clearSlots = () => {
     setSlots({});
   };
@@ -164,6 +297,14 @@ export function ChartMaker({ chart, onApplyChart }: ChartMakerProps) {
       <div className="makerGrid">
         <aside className="makerControls">
           <label>
+            譜面ID
+            <input
+              value={makerChartId}
+              onChange={(event) => setMakerChartId(event.target.value)}
+            />
+          </label>
+
+          <label>
             曲名
             <input
               value={form.title}
@@ -184,6 +325,28 @@ export function ChartMaker({ chart, onApplyChart }: ChartMakerProps) {
             <input
               value={form.audioUrl}
               onChange={(event) => setForm((current) => ({ ...current, audioUrl: event.target.value }))}
+            />
+          </label>
+
+          <label>
+            MP3アップロード
+            <input
+              accept=".mp3,audio/mpeg"
+              type="file"
+              onChange={(event) => {
+                void handleUploadMusic(event.currentTarget.files?.[0]);
+                event.currentTarget.value = "";
+              }}
+            />
+          </label>
+
+          <label>
+            管理トークン
+            <input
+              autoComplete="off"
+              type="password"
+              value={adminToken}
+              onChange={(event) => updateAdminToken(event.target.value)}
             />
           </label>
 
@@ -318,6 +481,15 @@ export function ChartMaker({ chart, onApplyChart }: ChartMakerProps) {
             <button type="button" onClick={() => onApplyChart(generatedChart)}>
               プレビューに反映
             </button>
+            <button type="button" onClick={handleLoad} disabled={cloudState === "loading"}>
+              {cloudState === "loading" ? "読込中" : "R2から読込"}
+            </button>
+            <button type="button" onClick={handleSave} disabled={cloudState === "saving"}>
+              {cloudState === "saving" ? "保存中" : "R2に保存"}
+            </button>
+            <button type="button" onClick={handleDelete} disabled={cloudState === "deleting"}>
+              {cloudState === "deleting" ? "削除中" : "R2から削除"}
+            </button>
             <button type="button" onClick={handleCopy}>
               JSONコピー
             </button>
@@ -326,7 +498,20 @@ export function ChartMaker({ chart, onApplyChart }: ChartMakerProps) {
             </button>
           </div>
           <p className="makerStatus">
-            {copyState === "idle" && "クリック: 空 -> red -> blue -> 空。JSONには配置したバーだけ記録されます。"}
+            {uploadState === "uploading" && "MP3をアップロードしています。"}
+            {uploadState === "uploaded" && "MP3をアップロードし、音源URLに反映しました。"}
+            {uploadState === "failed" && `MP3アップロードエラー: ${uploadError}`}
+            {uploadState === "idle" && cloudState === "loading" && "譜面をR2から読み込んでいます。"}
+            {uploadState === "idle" && cloudState === "loaded" && "譜面をR2から読み込みました。"}
+            {uploadState === "idle" && cloudState === "saving" && "譜面をR2に保存しています。"}
+            {uploadState === "idle" && cloudState === "saved" && "譜面をR2に保存し、プレビューにも反映しました。"}
+            {uploadState === "idle" && cloudState === "deleting" && "譜面をR2から削除しています。"}
+            {uploadState === "idle" && cloudState === "deleted" && "譜面をR2から削除しました。"}
+            {uploadState === "idle" && cloudState === "failed" && `R2エラー: ${cloudError}`}
+            {uploadState === "idle" &&
+              cloudState === "idle" &&
+              copyState === "idle" &&
+              "クリック: 空 -> red -> blue -> 空。JSONには配置したバーだけ記録されます。"}
             {copyState === "copied" && "JSONをコピーしました。"}
             {copyState === "failed" && "コピーできませんでした。"}
           </p>
@@ -428,6 +613,16 @@ function normalizeSections(sections: MakerSection[]): MakerSection[] | undefined
     .sort((a, b) => a.startMeasure - b.startMeasure);
 
   return normalizedSections.length > 0 ? normalizedSections : undefined;
+}
+
+function normalizeChartId(chartId: string): string | null {
+  const normalizedChartId = chartId.trim().toLowerCase();
+
+  if (!/^[a-z0-9][a-z0-9-]{0,63}$/.test(normalizedChartId)) {
+    return null;
+  }
+
+  return normalizedChartId;
 }
 
 function getSectionNameForMeasure(sections: MakerSection[], measure: number): string | null {

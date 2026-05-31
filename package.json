@@ -5,7 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:cloudflare": "npm run build && wrangler dev",
     "build": "tsc -b && vite build",
+    "deploy": "npm run build && wrangler deploy",
+    "cf:bucket:create": "wrangler r2 bucket create rhythm-festa-assets",
+    "cf:seed:chart": "wrangler r2 object put rhythm-festa-assets/charts/demo.json --file public/charts/demo.json --content-type application/json",
+    "cf:seed:music": "wrangler r2 object put rhythm-festa-assets/music/demo.mp3 --file public/music/demo.mp3 --content-type audio/mpeg",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -17,6 +22,7 @@
   },
   "devDependencies": {
     "@types/react": "^19.2.15",
-    "@types/react-dom": "^19.2.3"
+    "@types/react-dom": "^19.2.3",
+    "wrangler": "^4.95.0"
   }
 }
