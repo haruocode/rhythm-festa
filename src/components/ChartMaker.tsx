@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Chart, ChartSection, Note, Team } from "../game/chart";
 import { ADMIN_TOKEN_STORAGE_KEY, type UploadedMusic } from "../game/cloudApi";
+import { createSongFromAudioUrl, type SongController } from "../game/audio";
+import { getTeamForKeyboardKey } from "../game/input";
 
 type ChartMakerProps = {
   chart: Chart;
@@ -24,6 +26,8 @@ type MakerForm = {
 
 type SlotMap = Record<string, Team>;
 type MakerSection = ChartSection;
+type ChartSource = "grid" | "recording";
+type RecordingState = "idle" | "loading" | "recording" | "stopped" | "failed";
 
 const SLOTS_PER_MEASURE = 16;
 const BEATS_PER_MEASURE = 4;
@@ -40,6 +44,11 @@ export function ChartMaker({
   const [form, setForm] = useState<MakerForm>(() => createInitialForm(chart));
   const [slots, setSlots] = useState<SlotMap>(() => createInitialSlots(chart, createInitialForm(chart)));
   const [sections, setSections] = useState<MakerSection[]>(() => createInitialSections(chart));
+  const [chartSource, setChartSource] = useState<ChartSource>("grid");
+  const [recordingState, setRecordingState] = useState<RecordingState>("idle");
+  const [recordingError, setRecordingError] = useState<string | null>(null);
+  const [recordingTimeMs, setRecordingTimeMs] = useState(0);
+  const [recordedNotes, setRecordedNotes] = useState<Note[]>([]);
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
   const [cloudState, setCloudState] = useState<
     "idle" | "loading" | "loaded" | "saving" | "saved" | "deleting" | "deleted" | "failed"
@@ -49,21 +58,87 @@ export function ChartMaker({
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [makerChartId, setMakerChartId] = useState(chartId);
   const [adminToken, setAdminToken] = useState(() => localStorage.getItem(ADMIN_TOKEN_STORAGE_KEY) ?? "");
+  const recordingSongRef = useRef<SongController | null>(null);
+  const recordingFrameRef = useRef<number | null>(null);
+  const recordingStateRef = useRef<RecordingState>("idle");
+  const formRef = useRef<MakerForm>(form);
 
   useEffect(() => {
     const nextForm = createInitialForm(chart);
     setForm(nextForm);
     setSlots(createInitialSlots(chart, nextForm));
     setSections(createInitialSections(chart));
+    setChartSource("grid");
+    setRecordedNotes([]);
   }, [chart]);
 
   useEffect(() => {
     setMakerChartId(chartId);
   }, [chartId]);
 
+  useEffect(() => {
+    recordingStateRef.current = recordingState;
+  }, [recordingState]);
+
+  useEffect(() => {
+    formRef.current = form;
+  }, [form]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.repeat || recordingStateRef.current !== "recording") {
+        return;
+      }
+
+      const team = getTeamForKeyboardKey(event.key);
+
+      if (!team) {
+        return;
+      }
+
+      const song = recordingSongRef.current;
+
+      if (!song) {
+        return;
+      }
+
+      event.preventDefault();
+
+      const timeMs = quantizeToSixteenth(song.getSongTimeMs(), formRef.current);
+
+      setRecordedNotes((currentNotes) => [
+        ...currentNotes,
+        {
+          id: `recorded-${currentNotes.length + 1}`,
+          timeMs,
+          team,
+          judged: false,
+        },
+      ]);
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+
+      if (recordingFrameRef.current !== null) {
+        cancelAnimationFrame(recordingFrameRef.current);
+      }
+
+      void recordingSongRef.current?.dispose();
+    };
+  }, []);
+
   const sixteenthMs = getSixteenthMs(form.quarterNoteMs);
   const measureCount = getMeasureCount(form.firstTimeMs, form.endTimeMs, sixteenthMs);
-  const generatedChart = useMemo(() => createChartFromForm(form, slots, sections), [form, slots, sections]);
+  const generatedChart = useMemo(
+    () =>
+      chartSource === "recording"
+        ? createChartFromRecordedNotes(form, recordedNotes, sections)
+        : createChartFromForm(form, slots, sections),
+    [chartSource, form, recordedNotes, sections, slots],
+  );
   const generatedJson = useMemo(() => JSON.stringify(generatedChart, null, 2), [generatedChart]);
 
   const updateNumber = (key: keyof Pick<MakerForm, "firstTimeMs" | "endTimeMs">, value: string) => {
@@ -129,6 +204,79 @@ export function ChartMaker({
     link.download = "demo.json";
     link.click();
     URL.revokeObjectURL(url);
+  };
+
+  const tickRecordingTime = () => {
+    const song = recordingSongRef.current;
+
+    if (!song) {
+      return;
+    }
+
+    const nextTimeMs = song.getSongTimeMs();
+    setRecordingTimeMs(nextTimeMs);
+
+    if (nextTimeMs >= song.durationMs) {
+      void stopRecording();
+      return;
+    }
+
+    recordingFrameRef.current = requestAnimationFrame(tickRecordingTime);
+  };
+
+  const startRecording = async () => {
+    if (recordingStateRef.current === "loading" || recordingStateRef.current === "recording") {
+      return;
+    }
+
+    if (recordingFrameRef.current !== null) {
+      cancelAnimationFrame(recordingFrameRef.current);
+      recordingFrameRef.current = null;
+    }
+
+    recordingStateRef.current = "loading";
+    setRecordingState("loading");
+    setRecordingError(null);
+
+    try {
+      await recordingSongRef.current?.dispose();
+      const song = await createSongFromAudioUrl(form.audioUrl.trim() || "/music/demo.mp3");
+      recordingSongRef.current = song;
+      setRecordedNotes([]);
+      setChartSource("recording");
+      setRecordingTimeMs(0);
+      song.start();
+      recordingStateRef.current = "recording";
+      setRecordingState("recording");
+      recordingFrameRef.current = requestAnimationFrame(tickRecordingTime);
+    } catch (error) {
+      recordingSongRef.current = null;
+      recordingStateRef.current = "failed";
+      setRecordingState("failed");
+      setRecordingError(error instanceof Error ? error.message : "音源を再生できませんでした。");
+    }
+  };
+
+  const stopRecording = async () => {
+    if (recordingFrameRef.current !== null) {
+      cancelAnimationFrame(recordingFrameRef.current);
+      recordingFrameRef.current = null;
+    }
+
+    await recordingSongRef.current?.dispose();
+    recordingSongRef.current = null;
+    recordingStateRef.current = "stopped";
+    setRecordingState("stopped");
+  };
+
+  const clearRecording = async () => {
+    await stopRecording();
+    setRecordedNotes([]);
+    setRecordingTimeMs(0);
+    setChartSource("grid");
+    recordingStateRef.current = "idle";
+    setRecordingState("idle");
+    setRecordingError(null);
   };
 
   const updateAdminToken = (value: string) => {
@@ -400,6 +548,47 @@ export function ChartMaker({
             配置をクリア
           </button>
 
+          <div className="sourceSwitch" aria-label="出力モード">
+            <button
+              className={chartSource === "grid" ? "active" : ""}
+              type="button"
+              onClick={() => setChartSource("grid")}
+            >
+              打ち込み
+            </button>
+            <button
+              className={chartSource === "recording" ? "active" : ""}
+              type="button"
+              onClick={() => setChartSource("recording")}
+            >
+              リアルタイム
+            </button>
+          </div>
+
+          <div className="liveRecorder">
+            <div className="liveRecorderHeader">
+              <strong>リアルタイム記録</strong>
+              <span>{formatTimeMs(recordingTimeMs)}</span>
+            </div>
+            <div className="liveRecorderButtons">
+              <button type="button" onClick={startRecording} disabled={recordingState === "loading" || recordingState === "recording"}>
+                {recordingState === "loading" ? "準備中" : "記録開始"}
+              </button>
+              <button type="button" onClick={() => void stopRecording()} disabled={recordingState !== "recording"}>
+                停止
+              </button>
+              <button type="button" onClick={() => void clearRecording()}>
+                クリア
+              </button>
+            </div>
+            <p>
+              {chartSource === "recording"
+                ? `${recordedNotes.length} notes / 16分吸着 / A=RED, L=BLUE`
+                : "開始すると右のJSONが16分吸着の記録データに切り替わります。"}
+            </p>
+            {recordingState === "failed" && <p className="liveRecorderError">{recordingError}</p>}
+          </div>
+
           <div className="sectionEditor">
             <div className="sectionEditorHeader">
               <strong>小節群</strong>
@@ -511,7 +700,9 @@ export function ChartMaker({
             {uploadState === "idle" &&
               cloudState === "idle" &&
               copyState === "idle" &&
-              "クリック: 空 -> red -> blue -> 空。JSONには配置したバーだけ記録されます。"}
+              (chartSource === "recording"
+                ? "リアルタイム記録のJSONを表示しています。A/Lを押した時刻を16分に吸着してtimeMsにします。"
+                : "クリック: 空 -> red -> blue -> 空。JSONには配置したバーだけ記録されます。")}
             {copyState === "copied" && "JSONをコピーしました。"}
             {copyState === "failed" && "コピーできませんでした。"}
           </p>
@@ -585,6 +776,40 @@ function createChartFromForm(form: MakerForm, slots: SlotMap, sections: MakerSec
     sections: normalizeSections(sections),
     notes,
   };
+}
+
+function createChartFromRecordedNotes(form: MakerForm, recordedNotes: Note[], sections: MakerSection[]): Chart {
+  return {
+    title: form.title.trim() || "Untitled Chart",
+    artist: form.artist.trim() || undefined,
+    audioUrl: form.audioUrl.trim() || "/music/demo.mp3",
+    sections: normalizeSections(sections),
+    notes: recordedNotes
+      .map((note, index) => ({
+        id: `${note.team}-${index + 1}`,
+        timeMs: Math.max(0, Math.round(note.timeMs)),
+        team: note.team,
+        judged: false,
+      }))
+      .sort((a, b) => a.timeMs - b.timeMs),
+  };
+}
+
+function quantizeToSixteenth(rawTimeMs: number, form: MakerForm): number {
+  const firstTimeMs = Math.max(0, Math.floor(form.firstTimeMs));
+  const sixteenthMs = getSixteenthMs(form.quarterNoteMs);
+  const slotIndex = Math.max(0, Math.round((rawTimeMs - firstTimeMs) / sixteenthMs));
+
+  return Math.round(firstTimeMs + slotIndex * sixteenthMs);
+}
+
+function formatTimeMs(timeMs: number): string {
+  const totalMs = Math.max(0, Math.floor(timeMs));
+  const minutes = Math.floor(totalMs / 60000);
+  const seconds = Math.floor((totalMs % 60000) / 1000);
+  const milliseconds = totalMs % 1000;
+
+  return `${minutes}:${String(seconds).padStart(2, "0")}.${String(milliseconds).padStart(3, "0")}`;
 }
 
 function getSixteenthMs(quarterNoteMs: number): number {

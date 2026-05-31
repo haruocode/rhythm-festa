@@ -160,6 +160,92 @@ button {
   cursor: pointer;
 }
 
+.sourceSwitch {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.sourceSwitch button {
+  min-height: 42px;
+  border: 2px solid rgb(255 247 237 / 0.18);
+  border-radius: 8px;
+  background: #020617;
+  color: #e5e7eb;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.sourceSwitch button.active {
+  border-color: #fbbf24;
+  background: #fbbf24;
+  color: #111827;
+}
+
+.liveRecorder {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 2px solid rgb(251 191 36 / 0.38);
+  border-radius: 8px;
+  background: rgb(2 6 23 / 0.62);
+}
+
+.liveRecorderHeader {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.liveRecorderHeader strong {
+  color: #fbbf24;
+  font-weight: 900;
+}
+
+.liveRecorderHeader span {
+  color: #fff7ed;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.liveRecorderButtons {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.liveRecorderButtons button {
+  min-height: 38px;
+  border: 0;
+  border-radius: 8px;
+  background: #e5e7eb;
+  color: #111827;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.liveRecorderButtons button:first-child {
+  background: #fbbf24;
+}
+
+.liveRecorderButtons button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.liveRecorder p {
+  margin: 0;
+  color: #e5e7eb;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.liveRecorderError {
+  color: #fecaca !important;
+}
+
 .sectionEditor {
   display: grid;
   gap: 10px;
