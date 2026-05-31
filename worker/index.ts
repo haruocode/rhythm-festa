@@ -101,13 +101,31 @@ export default {
         return await getMusic(request, env, filename);
       }
 
-      return env.ASSETS?.fetch(request) ?? notFound("Not found.");
+      return await getAsset(request, env);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unexpected error.";
       return withCors(json({ error: message }, 500));
     }
   },
 };
+
+async function getAsset(request: Request, env: Env): Promise<Response> {
+  if (!env.ASSETS) {
+    return notFound("Not found.");
+  }
+
+  const response = await env.ASSETS.fetch(request);
+
+  if (response.status !== 404 || !isPageRequest(request) || !acceptsHtml(request)) {
+    return response;
+  }
+
+  const indexUrl = new URL(request.url);
+  indexUrl.pathname = "/";
+  indexUrl.search = "";
+
+  return await env.ASSETS.fetch(new Request(indexUrl, request));
+}
 
 async function listCharts(env: Env): Promise<Response> {
   const objects = await listAll(env, CHART_PREFIX);
@@ -359,6 +377,16 @@ function getSafeMp3Filename(rawFilename: string): string {
 
 function isPositiveInteger(value: unknown): value is number {
   return typeof value === "number" && Number.isInteger(value) && value >= 1;
+}
+
+function acceptsHtml(request: Request): boolean {
+  const accept = request.headers.get("accept");
+
+  return accept === null || accept.includes("text/html");
+}
+
+function isPageRequest(request: Request): boolean {
+  return request.method === "GET" || request.method === "HEAD";
 }
 
 function badRequest(message: string): Response {
